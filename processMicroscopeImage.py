@@ -4,6 +4,7 @@ Created on Fri Jan 12 16:55:00 2018
 
 @author: Amirber
 
+Danial Papi 16 Nov, 2022
 Jie Hu 23 Nov, 2022
 
 Use openCV and skimage to analyze microscope slide showing particles.
@@ -14,7 +15,7 @@ Parts are adapted from: https://peerj.com/articles/453/
 """
 from cv2 import imread, morphologyEx
 import cv2
-from skimage import data, io, filters, feature
+from skimage import data, color, io, filters, feature
 import numpy as np
 from numpy import sqrt, pi, multiply, power
 import matplotlib.pyplot as plt
@@ -28,11 +29,11 @@ imgPath = 'TestExample_sample4_8Nov_center_10times.png'
 um2pxratio = 0.22 ## 0.22 micrometer/pixel at 10x lens
 image = imread(imgPath,0)# data.coins()  # or any NumPy array!
 
-#Whoe image
-cv2.imwrite("processed_image.png", image)
-
 # remove noise
 image = cv2.GaussianBlur(image,(3,3),0)
+
+#save processed image
+cv2.imwrite("processed_image.png", image)
 
 # #Show histogram
 # values, bins = np.histogram(image,
@@ -45,8 +46,6 @@ image = cv2.GaussianBlur(image,(3,3),0)
 #Calculate Soble edges
 edges_sob = filters.sobel(image)
 
-edges_canny = cv2.Canny(image, 100,200)
-
 # #Show histogram of non-sero Sobel edges
 # values, bins = np.histogram(np.nonzero(edges_sob) ,
 #                             bins=np.arange(1000))
@@ -54,14 +53,35 @@ edges_canny = cv2.Canny(image, 100,200)
 # plt.plot(bins[:-1], values)
 # plt.title("Use Histogram to select thresholding value")
 
-#Using a threshold to binarize the images, condider replacing with an adaptice
-# criteria. raing the TH to 0.03 will remove the two tuching particles but will 
-#cause larger oarticles to split.
+#Using a threshold to binarize the images, consider replacing with an adaptice
+# criteria. raisng the TH to 0.03 will remove the two tuching particles but will 
+# cause larger oarticles to split.
 
 edges_sob_filtered = np.where(edges_sob>0.01,280,0)
-cv2.imwrite("edges_sob_filtered.png", edges_sob_filtered)
 
-cv2.imwrite("edges_canny.png", edges_canny)
+print(edges_sob)
+print(edges_sob_filtered)
+ret,th2_edge_sob = cv2.threshold(edges_sob,0,255,cv2.THRESH_BINARY_INV)
+cv2.imwrite("edges_sob_filtered.png", th2_edge_sob)
+
+
+#gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+edges_canny = cv2.Canny(image,10,100)
+
+contours, _ = cv2.findContours(edges_canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+cv2.drawContours(image, contours, -1, (0,0,255), thickness = 2)
+
+contour_area = []
+print("found ", len(contours), "contours of dust particles.")
+for i in range(len(contours)):
+    area = cv2.contourArea(contours[i])
+    contour_area.append(area)
+
+print("contour area", contour_area)
+
+ret,th2 = cv2.threshold(edges_canny,0,255,cv2.THRESH_BINARY_INV)
+## cv2.imshow("img",th2)
+cv2.imwrite("edges_canny.png", th2)
 
 
 #Use lable on binnary Sobel edges to find shapes
@@ -73,7 +93,7 @@ ax.axis('off')
 
 #Do not plot regions smaller thn 5 pixels on each axis
 sizeTh=10
-
+### calculate by rectangle area
 for region in regionprops(label_image):
     # Draw rectangle around segmented coins.
     if ((region.bbox[2]-region.bbox[0])>sizeTh and (region.bbox[3] - region.bbox[1])>sizeTh):
@@ -88,6 +108,7 @@ for region in regionprops(label_image):
         ax.add_patch(rect)
 
 #Sort all found shapes by region size
+# area by square
 sortRegions = [[(region.bbox[2]-region.bbox[0]) * (region.bbox[3] - region.bbox[1]),region.bbox] 
                 for region in regionprops(label_image) if
                 ((region.bbox[2]-region.bbox[0])>sizeTh and (region.bbox[3] - region.bbox[1])>sizeTh)]
@@ -95,10 +116,13 @@ sortRegions = sorted(sortRegions, reverse=True)
 
 #Check particle sizes distribution
 particleSize = [size[0] for size in sortRegions]
-particleRadius  = [size[0] for size in sortRegions]
+particleRadius  = [sqrt(size[0]/pi) for size in sortRegions]
+particleMass = [] ### volume = 4./3*pi*pow(radius,3);
+##      double mass = volume*0.001;
+## h.Fill(radius,mass)
 
-check_list_area = [valArea for valArea in np.multiply(np.power(um2pxratio,2), particleSize)]
-check_list_radius = [sqrt(valArea/pi) for valArea in np.multiply(np.power(um2pxratio,2), particleRadius)]
+check_list_area = [val for val in np.multiply(np.power(um2pxratio,2), particleSize)]
+check_list_radius = [val for val in np.multiply(np.power(um2pxratio,2), particleRadius)]
 
 #Show histogram of non-sero Sobel edges
 plt.figure()
@@ -182,10 +206,6 @@ if answer == 'y':
     
 #Add fractal dimension estimation https://github.com/scikit-image/scikit-image/issues/1730
 
-print( "particle size", np.multiply(np.power(um2pxratio,2), particleSize) )
-print( "particle radius", np.multiply(np.power(um2pxratio,2), particleRadius) )
-
-
-
-
+print( "particle size (um^2)", np.multiply(np.power(um2pxratio,2), particleSize) )
+print( "particle radius (um)", np.multiply(np.power(um2pxratio,2), particleRadius) )
 
