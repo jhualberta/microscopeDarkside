@@ -16,6 +16,7 @@ from cv2 import imread, morphologyEx
 import cv2
 from skimage import data, io, filters, feature
 import numpy as np
+from numpy import sqrt, pi, multiply, power
 import matplotlib.pyplot as plt
 # Label image regions.
 from skimage.measure import regionprops
@@ -24,7 +25,7 @@ from skimage.morphology import label
 
 imgPath = 'TestExample_sample4_8Nov_center_10times.png'
 # Insert a um to pixel conversion ratio
-um2pxratio = 0.22
+um2pxratio = 0.22 ## 0.22 micrometer/pixel at 10x lens
 image = imread(imgPath,0)# data.coins()  # or any NumPy array!
 
 #Whoe image
@@ -94,19 +95,20 @@ sortRegions = sorted(sortRegions, reverse=True)
 
 #Check particle sizes distribution
 particleSize = [size[0] for size in sortRegions]
+particleRadius  = [size[0] for size in sortRegions]
 
-check_list = [np.sqrt(number/np.pi) for number in np.multiply(np.power(um2pxratio,2), particleSize)]
+check_list_area = [valArea for valArea in np.multiply(np.power(um2pxratio,2), particleSize)]
+check_list_radius = [sqrt(valArea/pi) for valArea in np.multiply(np.power(um2pxratio,2), particleRadius)]
 
 #Show histogram of non-sero Sobel edges
 plt.figure()
-plt.hist(check_list, bins=20,linewidth=2)
-plt.xlabel('Particle area',fontsize=14)
+plt.hist(check_list_radius, bins=20,linewidth=2)
+plt.xlabel('Particle radius',fontsize=14)
 plt.ylabel('Particle count',fontsize=14)
 plt.title("Particle area distribution",fontsize=16)
 plt.show()
 #show 5 largest regions location, image and edge
-print("show 5 largest regions location, image and edge: y/n")
-answer = input("Enter yes or no: ") 
+answer = input("show 5 largest regions location, image and edge (y/n): ") 
 if answer == 'y':
    for region in sortRegions[:5]:
        # Draw rectangle around segmented coins.
@@ -180,4 +182,10 @@ if answer == 'y':
     
 #Add fractal dimension estimation https://github.com/scikit-image/scikit-image/issues/1730
 
-print(np.multiply(np.power(um2pxratio,2), particleSize))
+print( "particle size", np.multiply(np.power(um2pxratio,2), particleSize) )
+print( "particle radius", np.multiply(np.power(um2pxratio,2), particleRadius) )
+
+
+
+
+
