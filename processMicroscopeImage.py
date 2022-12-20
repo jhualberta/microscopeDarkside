@@ -77,15 +77,20 @@ for i in range(len(contours)):
     area = cv2.contourArea(contours[i])
     contour_area.append(area)
 
-print("contour area", contour_area)
+# print("contour area", contour_area)
 
 ret,th2 = cv2.threshold(edges_canny,0,255,cv2.THRESH_BINARY_INV)
 ## cv2.imshow("img",th2)
 cv2.imwrite("edges_canny.png", th2)
 
-
 #Use lable on binnary Sobel edges to find shapes
-label_image = label(edges_sob_filtered)
+## label_image = label(edges_sob_filtered)
+## fig,ax = plt.subplots(1,figsize=(20,10))
+## ax.imshow(image, cmap=plt.cm.gray)
+## ax.set_title('Labeled items', fontsize=24)
+## ax.axis('off')
+
+label_image = label(edges_canny)
 fig,ax = plt.subplots(1,figsize=(20,10))
 ax.imshow(image, cmap=plt.cm.gray)
 ax.set_title('Labeled items', fontsize=24)
@@ -107,6 +112,7 @@ for region in regionprops(label_image):
                                 linewidth=2)
         ax.add_patch(rect)
 
+
 #Sort all found shapes by region size
 # area by square
 sortRegions = [[(region.bbox[2]-region.bbox[0]) * (region.bbox[3] - region.bbox[1]),region.bbox] 
@@ -117,20 +123,29 @@ sortRegions = sorted(sortRegions, reverse=True)
 #Check particle sizes distribution
 particleSize = [size[0] for size in sortRegions]
 particleRadius  = [sqrt(size[0]/pi) for size in sortRegions]
-particleMass = [] ### volume = 4./3*pi*pow(radius,3);
+particleMass = [4./3*pi*pow(radius,3)*0.001 for radius in particleRadius] 
 ##      double mass = volume*0.001;
 ## h.Fill(radius,mass)
 
-check_list_area = [val for val in np.multiply(np.power(um2pxratio,2), particleSize)]
-check_list_radius = [val for val in np.multiply(np.power(um2pxratio,2), particleRadius)]
+scale_list_area = [val for val in multiply(um2pxratio*um2pxratio, particleSize)]
+scale_list_radius = [val for val in multiply(um2pxratio*um2pxratio, particleRadius)]
 
-#Show histogram of non-sero Sobel edges
+print("sobel radius = ", scale_list_radius)
+
+sortContourArea = sorted(contour_area, reverse = True)
+scale_contour_area = [val for val in multiply(um2pxratio*um2pxratio, sortContourArea)]
+scale_contour_radius = [sqrt(val/pi) for val in scale_contour_area]
+
+print("canny radius = ", scale_contour_radius)
+
+#Show histogram of non-zero Sobel edges
 plt.figure()
-plt.hist(check_list_radius, bins=20,linewidth=2)
+plt.hist(scale_list_radius, bins=20,linewidth=2)
 plt.xlabel('Particle radius',fontsize=14)
 plt.ylabel('Particle count',fontsize=14)
 plt.title("Particle area distribution",fontsize=16)
 plt.show()
+
 #show 5 largest regions location, image and edge
 answer = input("show 5 largest regions location, image and edge (y/n): ") 
 if answer == 'y':
@@ -206,6 +221,6 @@ if answer == 'y':
     
 #Add fractal dimension estimation https://github.com/scikit-image/scikit-image/issues/1730
 
-print( "particle size (um^2)", np.multiply(np.power(um2pxratio,2), particleSize) )
-print( "particle radius (um)", np.multiply(np.power(um2pxratio,2), particleRadius) )
+# print( "particle size (um^2)", np.multiply(np.power(um2pxratio,2), particleSize) )
+# print( "particle radius (um)", np.multiply(np.power(um2pxratio,2), particleRadius) )
 

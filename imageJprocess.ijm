@@ -1,3 +1,5 @@
+// Strange thing: the pictures must be put in a folder without any other files except images! otherwise it can not find pictures!
+
 dirInput = getDirectory("~/MyGithub/microscopeDarkside/pic/");
 dirOutput = getDirectory("~/MyGithub/microscopeDarkside/resultsImageJ/");
 list = getFileList(dirInput);

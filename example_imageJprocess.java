@@ -7,7 +7,7 @@ suffix = ".png"
 for (i=0; i<list.length; i++) {
 	showProgress(i+1, list.length);
     	open(dirInput+list[i]);
-        print(list[i]);
+        // print(list[i]);
     	run("8-bit");
         run("Gaussian Blur...", "sigma=1");
         run("Subtract Background...","rolling=50.0 light background");
@@ -22,7 +22,8 @@ for (i=0; i<list.length; i++) {
            //run("Convert to Mask");
            //run("Close");
            run("Analyze Particles...", "size=0-Infinity circularity=0.00-1.00");// show=Nothing display clear summarize");
-           saveAs("Results", dirOutput+String.pad(i,4)+"_Results.csv");
+           saveAs("Results", dirOutput+File.nameWithoutExtension+"_Results.csv");
+           //saveAs("Results", dirOutput+String.pad(list[i],4)+"_Results.csv");
            saveAs("TIFF", dirOutput+list[i]);
     	}
     	else {
@@ -34,28 +35,7 @@ for (i=0; i<list.length; i++) {
     	}
     close();
 }
-run("Close All");
 
-//  saveSettings;
-//  tolerance = 0.0000001;
-//  labels = newArray("Area","Mean","StdDev","Min","Max", "X","Y",
-//    "XM","YM","Perim.","Major","Angle", "Circ.","Feret");
-//  run("AuPbSn 40 (56K)");
-//  run("Set Measurements...", "area mean standard min centroid perimeter fit feret's");
-//  setAutoThreshold("Huang");
-//  run("Analyze Particles...", "  show=Overlay clear");
-//  //resetThreshold;
-//  for (i=0; i<nResults; i++) {
-//     Overlay.activateSelection(i);
-//     for (j=0; j<labels.length; j++) {
-//        label = labels[j];
-//        List.setMeasurements("limit");
-//        v1 = getResult(label,i);
-//        v2 = List.getValue(label);
-//        if (abs(v1-v2)>tolerance || (!isNaN(v1)&&isNaN(v2)) )
-//           print(label+"["+i+"]: "+v1+"  "+v2);
-//
-//     }
-//  }
-//  restoreSettings;
+
+
 
